@@ -28,6 +28,7 @@ git clone https://github.com/rafidfahmid14/python-object-detector.git
 Install dependencies:
 
 pip install -r requirements.txt
+
 yolov3.weights https://data.pjreddie.com/files/yolov3.weights 
 
 
