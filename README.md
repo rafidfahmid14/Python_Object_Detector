@@ -16,6 +16,7 @@ This project uses Python and OpenCV to detect objects and identify their dominan
 • webcolors
 • tkinter (for GUI)
 • pyttsx3 (for TTS)
+• yolov3(object detection framework)
 
 🚀 How to Run
 
@@ -27,6 +28,7 @@ git clone https://github.com/rafidfahmid14/python-object-detector.git
 Install dependencies:
 
 pip install -r requirements.txt
+yolov3.weights https://data.pjreddie.com/files/yolov3.weights 
 
 
 Run the main script:
