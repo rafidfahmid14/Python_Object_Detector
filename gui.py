@@ -1,48 +1,56 @@
 import tkinter as tk
 import pyttsx3
+import threading
 
-# --- Initialize Text-to-Speech ---
 engine = pyttsx3.init('sapi5')
 
 def speak(text):
-    engine.say(text)
-    engine.runAndWait()
+    def run():
+        engine.say(text)
+        engine.runAndWait()
+    threading.Thread(target=run, daemon=True).start()
 
-
-# --- Button Functions ---
 def start_detection():
     print("Starting object detection...")
     speak("Starting object detection mode")
-    # later: call your object detection code here
-
+    threading.Thread(target=run_object_detection, daemon=True).start()
 
 def color_mode():
     print("Color mode activated.")
     speak("Color detection mode activated")
-    # later: run your color detection code
-
+    threading.Thread(target=run_color_detection, daemon=True).start()
 
 def distance_mode():
     print("Distance mode activated.")
     speak("Distance mode activated")
-    # later: your distance algorithm
+    threading.Thread(target=run_distance_detection, daemon=True).start()
 
+# ---- Placeholder functions ----
+def run_object_detection():
+    print("YOLO detection running...")
 
-# --- GUI Setup ---
+def run_color_detection():
+    print("Color detection running...")
+
+def run_distance_detection():
+    print("Distance detection running...")
+
+# ---- GUI Setup ----
 window = tk.Tk()
 window.title("VisionAssist")
-window.geometry("300x250")
+window.geometry("300x260")
+window.resizable(False, False)
 
 title_label = tk.Label(window, text="VisionAssist", font=("Arial", 18, "bold"))
 title_label.pack(pady=15)
 
-btn_start = tk.Button(window, text="Start Detection", command=start_detection, width=20, height=2)
-btn_start.pack(pady=10)
+btn_start = tk.Button(window, text="Start Detection", width=20, height=2, command=start_detection)
+btn_start.pack(pady=8)
 
-btn_color = tk.Button(window, text="Color Mode", command=color_mode, width=20, height=2)
-btn_color.pack(pady=10)
+btn_color = tk.Button(window, text="Color Mode", width=20, height=2, command=color_mode)
+btn_color.pack(pady=8)
 
-btn_distance = tk.Button(window, text="Distance Mode", command=distance_mode, width=20, height=2)
-btn_distance.pack(pady=10)
+btn_distance = tk.Button(window, text="Distance Mode", width=20, height=2, command=distance_mode)
+btn_distance.pack(pady=8)
 
 window.mainloop()
