@@ -40,4 +40,4 @@ python gui.py
 👥 Collaborators
 
 • Rafid Fahmid (Lead Developer)
-• Toby Garza (UI and testing)
+• Toby Garza (UI and object detection script)
