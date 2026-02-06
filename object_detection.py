@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import os
+import time
+import ctypes
 
 # Get the directory where this script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -23,7 +25,19 @@ def run_object_detection(stop_event=None):
         print(f"Error: names file not found at {names_path}")
         return
 
+    # Create a small loading window while the model loads
+    window_name = "YOLO Object Detection"
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    loading = np.zeros((120, 400, 3), dtype=np.uint8)
+    cv2.putText(loading, "Loading model...", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    cv2.imshow(window_name, loading)
+    cv2.waitKey(1)
+
+    # status overlay text used while running
+    status_text = "Loading model..."
+
     net = cv2.dnn.readNetFromDarknet(config_path, weights_path)
+    status_text = "Model loaded"
 
     # Load class labels (COCO dataset)
     with open(names_path, "r") as f:
@@ -39,6 +53,23 @@ def run_object_detection(stop_event=None):
         print("Error: Could not open video capture device (camera not found)")
         cap.release()
         return
+
+    prev_time = time.time()
+    # Make the display window resizable and set a default size
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    display_w, display_h = 800, 600
+    cv2.resizeWindow(window_name, display_w, display_h)
+    # Try to center window on primary display
+    try:
+        user32 = ctypes.windll.user32
+        user32.SetProcessDPIAware()
+        screen_w = user32.GetSystemMetrics(0)
+        screen_h = user32.GetSystemMetrics(1)
+        move_x = max((screen_w - display_w) // 2, 0)
+        move_y = max((screen_h - display_h) // 2, 0)
+        cv2.moveWindow(window_name, move_x, move_y)
+    except Exception:
+        cv2.moveWindow(window_name, 100, 100)
 
     while True:
         if stop_event is not None and stop_event.is_set():
@@ -95,7 +126,24 @@ def run_object_detection(stop_event=None):
             cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
             cv2.putText(frame, f"{label} {confidence:.2f}", (x, y - 10), font, 0.5, color, 2)
 
-        cv2.imshow("YOLO Object Detection", frame)
+        # Compute and display FPS
+        now = time.time()
+        fps = 1.0 / (now - prev_time) if now != prev_time else 0.0
+        prev_time = now
+        fps_text = f"FPS: {fps:.1f}"
+        cv2.putText(frame, fps_text, (10, height - 10), font, 0.6, (0, 255, 255), 2)
+
+        # Draw a small semi-transparent status overlay in top-left
+        try:
+            overlay = frame.copy()
+            cv2.rectangle(overlay, (8, 8), (220, 40), (0, 0, 0), -1)
+            alpha = 0.5
+            cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+            cv2.putText(frame, status_text, (12, 30), font, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
+        except Exception:
+            pass
+
+        cv2.imshow(window_name, frame)
 
         # Exit when ESC key is pressed
         if cv2.waitKey(1) == 27:

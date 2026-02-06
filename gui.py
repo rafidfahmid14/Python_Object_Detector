@@ -1,57 +1,57 @@
 import tkinter as tk
 import pyttsx3
 import threading
-import queue
+from combined_manager import CombinedManager
 
-# Try to import the detector run functions; provide safe fallbacks if unavailable
-try:
-    from object_detection import run_object_detection
-except Exception:
-    def run_object_detection(stop_event=None):
-        print("object_detection module not available")
-
-try:
-    from color_detection import run_color_detection
-except Exception:
-    def run_color_detection(stop_event=None):
-        print("color_detection module not available")
-
-_speech_queue = queue.Queue()
-
-def _speech_worker():
-    engine = pyttsx3.init('sapi5')
-    while True:
-        text = _speech_queue.get()
-        if text is None:
-            break
-        try:
-            engine.say(text)
-            engine.runAndWait()
-        except Exception:
-            # ignore speech errors and continue
-            pass
-    try:
-        engine.stop()
-    except Exception:
-        pass
-
-_speech_thread = threading.Thread(target=_speech_worker, daemon=True)
-_speech_thread.start()
+engine = pyttsx3.init('sapi5')
 
 def speak(text):
-    _speech_queue.put(text)
+    def run():
+        engine.say(text)
+        engine.runAndWait()
+    threading.Thread(target=run, daemon=True).start()
+
+# --- Button Functions ---
+_manager = None
 
 def start_detection():
+    global _manager
     print("Starting object detection...")
     speak("Starting object detection mode")
-    threading.Thread(target=lambda: run_object_detection(), daemon=True).start()
+    if _manager is None:
+        _manager = CombinedManager()
+        try:
+            _manager.start()
+        except Exception as e:
+            print("Failed to start camera:", e)
+            speak("Failed to start camera")
+            _manager = None
+            return
+    _manager.enable_object(True)
 
 def color_mode():
+    global _manager
     print("Color mode activated.")
     speak("Color detection mode activated")
-    threading.Thread(target=lambda: run_color_detection(), daemon=True).start()
+    if _manager is None:
+        _manager = CombinedManager()
+        try:
+            _manager.start()
+        except Exception as e:
+            print("Failed to start camera:", e)
+            speak("Failed to start camera")
+            _manager = None
+            return
+    _manager.enable_color(True)
 
-# ---- Note: run functions are imported above ----
+# ---- Placeholder (wrappers that call module functions) ----
+def run_object_detection():
+    # kept for backward compatibility; starts combined manager object mode
+    start_detection()
+
+def run_color_detection():
+    # kept for backward compatibility; starts combined manager color mode
+    color_mode()
 
 # ---- GUI Setup ----
 window = tk.Tk()
@@ -62,24 +62,10 @@ window.resizable(False, False)
 title_label = tk.Label(window, text="VisionAssist", font=("Arial", 18, "bold"))
 title_label.pack(pady=15)
 
-btn_start = tk.Button(window, text="Start Detection", width=20, height=2, command=start_detection)
-btn_start.pack(pady=8)
+btn_start = tk.Button(window, text="Start Detection", command=start_detection, width=20, height=2)
+btn_start.pack(pady=10)
 
-btn_color = tk.Button(window, text="Color Mode", width=20, height=2, command=color_mode)
-btn_color.pack(pady=8)
-
-def on_closing():
-    # signal the speech worker to exit and wait briefly
-    try:
-        _speech_queue.put(None)
-    except Exception:
-        pass
-    try:
-        _speech_thread.join(timeout=1.0)
-    except Exception:
-        pass
-    window.destroy()
-
-window.protocol("WM_DELETE_WINDOW", on_closing)
+btn_color = tk.Button(window, text="Color Mode", command=color_mode, width=20, height=2)
+btn_color.pack(pady=10)
 
 window.mainloop()
