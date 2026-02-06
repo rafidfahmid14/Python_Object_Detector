@@ -1,37 +1,63 @@
 import tkinter as tk
 import pyttsx3
+import threading
+from combined_manager import CombinedManager
 
-# --- Initialize Text-to-Speech ---
 engine = pyttsx3.init('sapi5')
 
 def speak(text):
-    engine.say(text)
-    engine.runAndWait()
-
+    def run():
+        engine.say(text)
+        engine.runAndWait()
+    threading.Thread(target=run, daemon=True).start()
 
 # --- Button Functions ---
+_manager = None
+
 def start_detection():
+    global _manager
     print("Starting object detection...")
     speak("Starting object detection mode")
-    # later: call your object detection code here
-
+    if _manager is None:
+        _manager = CombinedManager()
+        try:
+            _manager.start()
+        except Exception as e:
+            print("Failed to start camera:", e)
+            speak("Failed to start camera")
+            _manager = None
+            return
+    _manager.enable_object(True)
 
 def color_mode():
+    global _manager
     print("Color mode activated.")
     speak("Color detection mode activated")
-    # later: run your color detection code
+    if _manager is None:
+        _manager = CombinedManager()
+        try:
+            _manager.start()
+        except Exception as e:
+            print("Failed to start camera:", e)
+            speak("Failed to start camera")
+            _manager = None
+            return
+    _manager.enable_color(True)
 
+# ---- Placeholder (wrappers that call module functions) ----
+def run_object_detection():
+    # kept for backward compatibility; starts combined manager object mode
+    start_detection()
 
-def distance_mode():
-    print("Distance mode activated.")
-    speak("Distance mode activated")
-    # later: your distance algorithm
+def run_color_detection():
+    # kept for backward compatibility; starts combined manager color mode
+    color_mode()
 
-
-# --- GUI Setup ---
+# ---- GUI Setup ----
 window = tk.Tk()
 window.title("VisionAssist")
-window.geometry("300x250")
+window.geometry("300x200")
+window.resizable(False, False)
 
 title_label = tk.Label(window, text="VisionAssist", font=("Arial", 18, "bold"))
 title_label.pack(pady=15)
@@ -41,8 +67,5 @@ btn_start.pack(pady=10)
 
 btn_color = tk.Button(window, text="Color Mode", command=color_mode, width=20, height=2)
 btn_color.pack(pady=10)
-
-btn_distance = tk.Button(window, text="Distance Mode", command=distance_mode, width=20, height=2)
-btn_distance.pack(pady=10)
 
 window.mainloop()
