@@ -1,5 +1,8 @@
 opencv-python
 numpy
 scikit-learn
-climage pillow matplotlib
+climage
+pillow
+matplotlib
 pyttsx3
+
