@@ -1,15 +1,8 @@
 import tkinter as tk
-import pyttsx3
 import threading
 from combined_manager import CombinedManager
+from common import speak
 
-engine = pyttsx3.init('sapi5')
-
-def speak(text):
-    def run():
-        engine.say(text)
-        engine.runAndWait()
-    threading.Thread(target=run, daemon=True).start()
 
 # --- Button Functions ---
 _manager = None
