@@ -4,9 +4,9 @@ import cv2
 import numpy as np
 import os
 from sklearn.cluster import KMeans
-import pyttsx3
+#import pyttsx3
 import queue
-
+from common import speak
 
 class CombinedManager:
     def __init__(self, stop_event=None):
@@ -42,7 +42,7 @@ class CombinedManager:
 
         # track last-announcement times to avoid repeats: label -> timestamp
         self._last_announced = {}
-        self._announce_cooldown = 2.0  # seconds (reduced for testing)
+        self._announce_cooldown = 5.0  # seconds (reduced for testing)
 
     def start(self):
         self.cap = cv2.VideoCapture(0)
@@ -168,7 +168,7 @@ class CombinedManager:
                         print(f"[DEBUG] Skipping '{label}' (announced {time_since:.1f}s ago, cooldown {self._announce_cooldown}s)")
 
             # throttle
-            time.sleep(0.05)
+            time.sleep(0.2)
 
     def _get_dominant_color(self, image):
         try:
@@ -236,26 +236,20 @@ class CombinedManager:
                 break
             time.sleep(0.01)
 
+    
+
     def _tts_worker(self):
-        try:
-            self._tts_engine = pyttsx3.init('sapi5')
-            print("[DEBUG] TTS engine initialized (sapi5)")
-        except Exception as e:
-            try:
-                self._tts_engine = pyttsx3.init()
-                print("[DEBUG] TTS engine initialized (default)")
-            except Exception as e2:
-                print(f"[DEBUG] TTS initialization failed: {e2}")
-                self._tts_engine = None
+        # cleaned up speak to move to function to solve issue with pyttsx not working for multiple calls in a row        
         while not self.stopped and (self.stop_event is None or not self.stop_event.is_set()):
             try:
                 text = self._tts_queue.get(timeout=0.5)
+                if text == "person":
+                    continue
+                print(f"[DEBUG] Speaking: {text}")
+                speak(text)
+                print(f"[DEBUG] Speaking (after runAndWait): {text}")
             except queue.Empty:
                 continue
-            if self._tts_engine:
-                try:
-                    print(f"[DEBUG] Speaking: {text}")
-                    self._tts_engine.say(text)
-                    self._tts_engine.runAndWait()
-                except Exception as e:
-                    print(f"[DEBUG] TTS error: {e}")
+           
+
+    
