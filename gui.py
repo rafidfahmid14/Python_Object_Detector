@@ -11,8 +11,6 @@ def start_detection():
     global _manager
     print("Starting object detection...")
     speak("Starting object detection mode")
-    speak("Testing 123")
-    speak("Starting object detection mode again")
     if _manager is None:
         _manager = CombinedManager()
         try:
